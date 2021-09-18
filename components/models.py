@@ -1,6 +1,5 @@
 class TetrisShape:
-    def __init__(self, name: str, shape_lists: list, color: tuple):
-        self.name = name
+    def __init__(self, shape_lists: list, color: tuple):
         self.shape_lists = shape_lists
         self.color = color
 

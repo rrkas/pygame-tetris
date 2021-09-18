@@ -155,11 +155,11 @@ T = [
 ]
 
 shapes = [
-    TetrisShape("S", S, (0, 255, 0)),
-    TetrisShape("Z", Z, (255, 0, 0)),
-    TetrisShape("I", I, (0, 255, 255)),
-    TetrisShape("O", O, (255, 255, 0)),
-    TetrisShape("J", J, (255, 165, 0)),
-    TetrisShape("L", L, (0, 0, 255)),
-    TetrisShape("T", T, (128, 0, 128)),
+    TetrisShape(S, (0, 255, 0)),
+    TetrisShape(Z, (255, 0, 0)),
+    TetrisShape(I, (0, 255, 255)),
+    TetrisShape(O, (255, 255, 0)),
+    TetrisShape(J, (255, 165, 0)),
+    TetrisShape(L, (0, 0, 255)),
+    TetrisShape(T, (128, 0, 128)),
 ]

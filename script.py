@@ -1,16 +1,17 @@
 from components.methods import *
+from components.models import GameState
 
 pygame.font.init()
 
 
-def main(surface):
+def main(surface: Surface):
     locked_positions = {}
 
     sx = constants.top_left_x + constants.play_width + 50
     sy = constants.top_left_y + constants.play_height / 2 - 100
 
     change_piece = False
-    run = True
+    state: GameState = GameState.running
     current_piece = get_piece()
     next_piece = get_piece()
     clock = pygame.time.Clock()
@@ -20,93 +21,127 @@ def main(surface):
     level = 1
     score = 0
 
-    while run:
-        grid = create_grid(locked_positions)
-        fall_time += clock.get_rawtime()
-        level_time += clock.get_rawtime()
-        clock.tick()
+    while state != GameState.over:
+        if state == GameState.running:
+            grid = create_grid(locked_positions)
+            fall_time += clock.get_rawtime()
+            level_time += clock.get_rawtime()
+            clock.tick()
 
-        if level_time / 1000 > 5:
-            level_time = 0
-            if fall_speed > 0.22:
-                fall_speed -= 0.005
-                level += 1
+            if level_time / 1000 > 5:
+                level_time = 0
+                if fall_speed > 0.22:
+                    fall_speed -= 0.005
+                    level += 1
 
-        if fall_time / 1000 > fall_speed:
-            fall_time = 0
-            current_piece.y += 1
-            if not valid_space(current_piece, grid) and current_piece.y > 0:
-                current_piece.y -= 1
-                change_piece = True
+            if fall_time / 1000 > fall_speed:
+                fall_time = 0
+                current_piece.y += 1
+                if not valid_space(current_piece, grid) and current_piece.y > 0:
+                    current_piece.y -= 1
+                    change_piece = True
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    run = False
-                elif event.key == pygame.K_LEFT:
-                    current_piece.x -= 1
-                    if not valid_space(current_piece, grid):
-                        current_piece.x += 1
-                elif event.key == pygame.K_RIGHT:
-                    current_piece.x += 1
-                    if not valid_space(current_piece, grid):
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    state = GameState.paused
+                elif event.type == pygame.KEYDOWN:
+                    if event.key in constants.exit_pause_keys:
+                        state = GameState.paused
+                    elif event.key == pygame.K_LEFT:
                         current_piece.x -= 1
-                elif event.key == pygame.K_DOWN:
-                    current_piece.y += 1
-                    if not valid_space(current_piece, grid):
-                        current_piece.y -= 1
-                elif event.key == pygame.K_UP:
-                    current_piece.rotation = (current_piece.rotation + 1) % len(
-                        current_piece.shape.shape_lists
-                    )
-                    if not valid_space(current_piece, grid):
-                        current_piece.rotation = (current_piece.rotation - 1) % len(
+                        if not valid_space(current_piece, grid):
+                            current_piece.x += 1
+                    elif event.key == pygame.K_RIGHT:
+                        current_piece.x += 1
+                        if not valid_space(current_piece, grid):
+                            current_piece.x -= 1
+                    elif event.key == pygame.K_DOWN:
+                        current_piece.y += 1
+                        if not valid_space(current_piece, grid):
+                            current_piece.y -= 1
+                    elif event.key == pygame.K_UP:
+                        current_piece.rotation = (current_piece.rotation + 1) % len(
                             current_piece.shape.shape_lists
                         )
+                        if not valid_space(current_piece, grid):
+                            current_piece.rotation = (current_piece.rotation - 1) % len(
+                                current_piece.shape.shape_lists
+                            )
 
-        shape_pos = convert_shape_format(current_piece)
-        for i in range(len(shape_pos)):
-            x, y = shape_pos[i]
-            if y > -1:
-                grid[y][x] = current_piece.shape.color
-        if change_piece:
-            for pos in shape_pos:
-                p = (pos[0], pos[1])
-                locked_positions[p] = current_piece.shape.color
-            current_piece = next_piece
-            next_piece = get_piece()
-            change_piece = False
+            shape_pos = convert_shape_format(current_piece)
+            for i in range(len(shape_pos)):
+                x, y = shape_pos[i]
+                if y > -1:
+                    grid[y][x] = current_piece.shape.color
+            if change_piece:
+                for pos in shape_pos:
+                    p = (pos[0], pos[1])
+                    locked_positions[p] = current_piece.shape.color
+                current_piece = next_piece
+                next_piece = get_piece()
+                change_piece = False
 
-            # update score
-            score += clear_rows(grid, locked_positions) * 10
-            pygame.display.update()
+                # update score
+                score += clear_rows(grid, locked_positions) * 10
+                pygame.display.update()
 
-        draw_window(surface, grid)
-        draw_next_shape(next_piece, surface)
+            draw_window(surface, grid)
+            draw_next_shape(next_piece, surface)
 
-        font = pygame.font.SysFont(constants.font_global, constants.font_sidetext_size)
-        label = font.render(f"Score: {score or 0}", 1, constants.label_color)
-        surface.blit(label, (sx + 30, sy + 160))
+            font = pygame.font.SysFont(
+                constants.font_global, constants.font_sidetext_size
+            )
+            label = font.render(f"Score: {score or 0}", 1, constants.label_color)
+            surface.blit(label, (sx + 30, sy + 160))
 
-        pygame.display.update()
-
-        if check_lost(locked_positions):
+            if check_lost(locked_positions):
+                draw_text_middle(
+                    surface,
+                    "Game Over!",
+                    constants.font_appname_size,
+                    constants.label_color,
+                )
+                pygame.display.update()
+                pygame.time.delay(int(constants.exit_delay_secs * 1000))
+                state = GameState.over
+        else:
+            surface.fill(constants.initial_bgcolor)
             draw_text_middle(
                 surface,
-                "Game Over!",
+                constants.app_name,
                 constants.font_appname_size,
                 constants.label_color,
+                False,
+                50,
             )
-            pygame.display.update()
-            pygame.time.delay(int(constants.exit_delay_secs * 1000))
-            run = False
+            draw_text_middle(
+                surface,
+                "Paused",
+                constants.font_sidetext_size,
+                constants.label_color,
+            )
+            draw_text_middle(
+                surface,
+                "Press enter key to continue and escape to exit!",
+                constants.font_sidetext_size,
+                constants.label_color,
+                False,
+                constants.s_height / 2 + 20,
+            )
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    state = GameState.over
+                elif event.type == pygame.KEYDOWN:
+                    if event.key in constants.exit_pause_keys:
+                        state = GameState.over
+                    elif event.key in constants.continue_keys:
+                        state = GameState.running
 
+        pygame.display.update()
     return score
 
 
-def main_menu(surface):
+def main_menu(surface: Surface):
     run = True
     score = None
     best_score = get_best_score()
@@ -114,7 +149,7 @@ def main_menu(surface):
         surface.fill(constants.initial_bgcolor)
         draw_text_middle(
             surface,
-            "Press any key to Play!",
+            "Press enter key to Play!",
             constants.font_appname_size,
             constants.label_color,
         )
@@ -151,17 +186,17 @@ def main_menu(surface):
             if event.type == pygame.QUIT:
                 run = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                if event.key in constants.exit_pause_keys:
                     run = False
-                else:
+                elif event.key in constants.continue_keys:
                     score = main(surface)
 
     pygame.display.quit()
 
 
 if __name__ == "__main__":
-    surface = pygame.display.set_mode(
+    window = pygame.display.set_mode(
         (constants.s_width, constants.s_height + constants.padding_bottom)
     )
     pygame.display.set_caption(constants.app_name)
-    main_menu(surface)
+    main_menu(window)

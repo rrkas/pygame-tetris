@@ -1,4 +1,5 @@
 # 10 x 20 square grid
+import pygame
 
 
 class Constants:
@@ -39,6 +40,10 @@ class Constants:
 
         # time
         self.exit_delay_secs = 1.5
+
+        # keys
+        self.continue_keys = [pygame.K_KP_ENTER, pygame.K_RETURN]
+        self.exit_pause_keys = [pygame.K_ESCAPE]
 
 
 constants = Constants()

@@ -1,17 +1,21 @@
+import datetime
 import os
 import random
 
 import pygame
+from pygame.surface import Surface
 
 from .constants import constants
 from .models import Piece
 from .shapes import shapes
 
+random.seed(datetime.datetime.now())
+
 
 # grid: colors in each cell
 
 # initialize color grid
-def create_grid(locked_positions):
+def create_grid(locked_positions: dict) -> dict:
     locked_positions = locked_positions or {}
     grid = [
         [constants.initial_bgcolor for _ in range(constants.cols)]
@@ -26,12 +30,12 @@ def create_grid(locked_positions):
 
 
 # randomly choose piece
-def get_piece():
+def get_piece() -> Piece:
     return Piece(5, 0, random.choice(shapes))
 
 
 # draw grid lines on screen
-def draw_grid(surface):
+def draw_grid(surface: Surface):
     sx = constants.top_left_x
     sy = constants.top_left_y
 
@@ -52,7 +56,7 @@ def draw_grid(surface):
 
 
 # rotate shape
-def convert_shape_format(shape: Piece):
+def convert_shape_format(shape: Piece) -> list:
     positions = []
     formatted = shape.shape.shape_lists[shape.rotation % len(shape.shape.shape_lists)]
     for i, line in enumerate(formatted):
@@ -65,7 +69,7 @@ def convert_shape_format(shape: Piece):
 
 
 # render title, bg, grid
-def draw_window(surface, grid):
+def draw_window(surface: Surface, grid: dict):
     surface.fill(constants.initial_bgcolor)
     pygame.font.init()
     font = pygame.font.SysFont(constants.font_global, constants.font_appname_size)
@@ -108,7 +112,7 @@ def draw_window(surface, grid):
 
 
 # check space validity
-def valid_space(shape, grid):
+def valid_space(shape: Piece, grid: dict) -> bool:
     accepted_pos = [
         [
             (j, i)
@@ -129,7 +133,7 @@ def valid_space(shape, grid):
 
 
 # check if game is lost
-def check_lost(positions):
+def check_lost(positions: dict) -> bool:
     for pos in positions:
         x, y = pos
         if y < 1:
@@ -138,7 +142,7 @@ def check_lost(positions):
 
 
 # draw next shape on side
-def draw_next_shape(shape: Piece, surface):
+def draw_next_shape(shape: Piece, surface: Surface):
     font = pygame.font.SysFont(constants.font_global, constants.font_sidetext_size)
     label = font.render("Next Shape", 1, constants.label_color)
 
@@ -184,7 +188,7 @@ def draw_next_shape(shape: Piece, surface):
 
 
 # clear the filled rows and shift blocks
-def clear_rows(grid, locked):
+def clear_rows(grid: dict, locked: dict) -> int:
     inc, ind = 0, 0
     for i in range(constants.rows - 1, -1, -1):
         row = grid[i]
@@ -207,7 +211,14 @@ def clear_rows(grid, locked):
 
 
 # for game over and start game
-def draw_text_middle(surface, text, size, color, vertical_center=True, margin_top=0):
+def draw_text_middle(
+    surface: Surface,
+    text: str,
+    size: int,
+    color: tuple,
+    vertical_center: bool = True,
+    margin_top=0,
+):
     font = pygame.font.SysFont(constants.font_global, size, bold=True)
     label = font.render(text, 1, color)
 
@@ -236,13 +247,13 @@ def draw_text_middle(surface, text, size, color, vertical_center=True, margin_to
 
 
 # save best score
-def save_best_score(score):
+def save_best_score(score: int):
     with open(constants.best_score_filename, "w") as f:
         f.write(str(score))
 
 
 # get best score
-def get_best_score():
+def get_best_score() -> int:
     if not os.path.exists(constants.best_score_filename):
         return None
     with open(constants.best_score_filename, "r") as f:
